@@ -1,0 +1,11 @@
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from .db import SessionLocal
+
+# Зависимость для получения объекта сессии в маршрутах FastAPI
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
