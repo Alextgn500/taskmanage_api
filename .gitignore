@@ -1,5 +1,6 @@
   # Виртуальное окружение
-  venv/
+  newvenv/
+   venv/
   __pycache__/
   *.pyc
 
@@ -14,4 +15,6 @@
 
   # Логи
   *.log
+  # Файлы миграций Alembic (опционально)
+# alembic/versions/
 

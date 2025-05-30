@@ -3,8 +3,10 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/new_venv1" />
+      <excludeFolder url="file://$MODULE_DIR$/newvenv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12 (taskmanager_fastapi) (2)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.12 (taskmanager_api) (4)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

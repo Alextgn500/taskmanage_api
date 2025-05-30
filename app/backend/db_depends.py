@@ -1,11 +1,11 @@
-from fastapi import Depends
-from sqlalchemy.orm import Session
-from .db import SessionLocal
+from app.backend.db import AsyncSessionLocal
 
-# Зависимость для получения объекта сессии в маршрутах FastAPI
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_async_db():
+    """
+    Зависимость для получения асинхронной сессии БД в FastAPI
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
