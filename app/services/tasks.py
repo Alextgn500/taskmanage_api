@@ -1,4 +1,6 @@
+import logging
 from sqlalchemy.orm import Session
+from datetime import datetime
 from sqlalchemy.future import select
 from sqlalchemy import and_
 from slugify import slugify
@@ -6,7 +8,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.task_m import Tasks
-from app.schemas.task_s import TaskResponse, CreateTask
+from app.schemas.task_s import TaskResponse, CreateTask, UpdateTask
 
 
 async def get_all_tasks(skip: int, limit: int, db: Session):
@@ -23,15 +25,27 @@ async def get_task_by_id(task_id: int, db: Session):
     return task
 
 
+logger = logging.getLogger(__name__)
+
+
 async def create_task(task: CreateTask, db: Session):
-    # Используем асинхронный запрос для проверки существующей задачи
-    result = await db.execute(select(Tasks).where(Tasks.title == task.title))
-    existing_task = result.scalars().first()
+    print(f"🚀 create_task вызвана для задачи: {task.title}")
 
-    if existing_task:
-        raise HTTPException(status_code=400, detail="Задача с таким заголовком уже существует")
+    # Генерируем базовый slug
+    base_slug = slugify(task.title)
+    print(f"🔧 Базовый slug: {base_slug}")
 
-    task_slug = slugify(task.title)
+    # Проверяем уникальность slug
+    slug_result = await db.execute(select(Tasks).where(Tasks.slug == base_slug))
+    existing_slug = slug_result.scalars().first()
+
+    if existing_slug:
+        timestamp = int(datetime.now().timestamp())
+        unique_slug = f"{base_slug}-{timestamp}"
+        print(f"🔧 Slug занят, создаю уникальный: {unique_slug}")
+    else:
+        unique_slug = base_slug
+        print(f"🔧 Slug свободен: {unique_slug}")
 
     db_task = Tasks(
         title=task.title,
@@ -39,22 +53,27 @@ async def create_task(task: CreateTask, db: Session):
         priority=task.priority,
         completed=task.completed,
         user_id=task.user_id,
-        slug=task_slug
+        slug=unique_slug
     )
+
+    print(f"🎯 Создаю задачу со slug: {unique_slug}")
+
     db.add(db_task)
     await db.commit()
     await db.refresh(db_task)
+
+    print(f"✅ Задача создана с ID: {db_task.id}, slug: {db_task.slug}")
     return db_task
 
 
-async def update_task(task_id: int, task: CreateTask, db: Session):
+async def update_task(task_id: int, task: UpdateTask, db: Session):
     result = await db.execute(select(Tasks).where(Tasks.id == task_id))
     db_task = result.scalar_one_or_none()
 
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    for key, value in task.dict(exclude_unset=True).items():
+    for key, value in task.model_dump(exclude_unset=True).items():
         setattr(db_task, key, value)
 
     await db.commit()

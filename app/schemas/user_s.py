@@ -1,53 +1,52 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, ConfigDict
 from typing import Optional
 
 
-# Pydantic модели
-class User(BaseModel):
-    id: int
-    username: str
-    firstname: str
-    lastname: str
-    age: int
-    slug: str
+class Task(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attribute = True
+    id: int
+    title: str
+    content: str
+    priority: int
+    completed: bool
+    user_id: int
+    slug: str
 
 
 class CreateUser(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     username: str
     firstname: str
     lastname: str
     age: int
+    password: str
 
-    class Config:
-        from_attributes = True
-
+    @field_validator('age')
+    @classmethod
+    def validate_age(cls, v):
+        if v < 0:
+            raise ValueError('Возраст не может быть отрицательным')
+        if v > 120:
+            raise ValueError('Возраст не может быть больше 120')
+        return v
 
 
 class UpdateUser(BaseModel):
-    username: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+    username: Optional[str] =None
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     age: Optional[int] = None
-    user_id: int
-
-    class Config:
-        from_attributes = True
+    password: Optional[str]= None
 
 
 class UserResponse(BaseModel):
-    id: int
-    username: str
-    firstname: str
-    lastname: str
-    age: int
-    slug: str
-
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "username": "john_doe",
@@ -57,3 +56,11 @@ class UserResponse(BaseModel):
                 "slug": "john-doe"
             }
         }
+    )
+
+    id: int
+    username: str
+    firstname: str
+    lastname: str
+    age: int
+    slug: str

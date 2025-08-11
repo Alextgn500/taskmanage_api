@@ -10,7 +10,7 @@ router_user = APIRouter(prefix='/users', tags=['users'])  # исправлено
 
 
 @router_user.get("/", response_model=List[UserResponse])  # исправлено: responsemodel -> response_model
-async def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_async_db)):
+async def read_users(skip: int = 0, limit: int = None, db: Session = Depends(get_async_db)):
     return await users.get_users(skip, limit, db)
 
 
@@ -19,7 +19,7 @@ async def read_user(user_id: int, db: Session = Depends(get_async_db)):
     return await users.get_user(user_id, db)
 
 
-@router_user.post("/", response_model=UserResponse)  # исправлено: responsemodel -> response_model
+@router_user.post("/", response_model=UserResponse, status_code=201)  # исправлено: responsemodel -> response_model
 async def create_user(user: CreateUser, db: Session = Depends(get_async_db)):
     return await users.create_user(user, db)
 

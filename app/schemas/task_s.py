@@ -1,9 +1,10 @@
-from pydantic import BaseModel
-from  typing import Optional
+from pydantic import BaseModel, ConfigDict
+from typing import Optional
 
 
-# Модели Pydantic
 class Task(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     content: str
@@ -11,34 +12,32 @@ class Task(BaseModel):
     completed: bool
     user_id: int
     slug: str
-
-    class Config:
-        from_attributes = True
 
 
 class CreateTask(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     title: str
     content: str
     priority: int
-    completed: bool
+    completed: bool = False
     user_id: int
 
-    class Config:
-        from_attributes = True
+class UpdateTask(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    title: str | None = None
+    content: str | None = None
+    priority: int | None = None
+    completed: bool | None = None
+    user_id: int | None = None  # Сделать необязательным
+
 
 
 class TaskResponse(BaseModel):
-    id: int
-    title: str
-    content: str
-    priority: int
-    completed: bool
-    user_id: int
-    slug: str
-
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "title": "Пример задачи",
@@ -49,3 +48,12 @@ class TaskResponse(BaseModel):
                 "slug": "primer-zadachi"
             }
         }
+    )
+
+    id: int
+    title: str
+    content: str
+    priority: int
+    completed: bool
+    user_id: int
+    slug: str

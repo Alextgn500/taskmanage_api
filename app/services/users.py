@@ -10,6 +10,24 @@ from app.schemas.user_s import CreateUser, UpdateUser, UserResponse
 from app.services.tasks import delete_tasks_by_user
 
 
+async def authenticate_user(username: str, password: str, db: Session):
+    """Проверка пользователя для входа"""
+    try:
+        # Найти пользователя по username
+        result = await db.execute(select(User).where(User.username == username))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            return None
+        if user.password == password:  # ⚠️ В продакшене хешируйте пароли!
+            return user
+
+        return None
+    except Exception as e:
+        print(f"Ошибка аутентификации: {e}")
+    return None
+
+
 async def get_users(skip: int, limit: int, db: Session):
     result = await db.execute(select(Users).offset(skip).limit(limit))
     users = result.scalars().all()
@@ -25,6 +43,8 @@ async def get_user(user_id: int, db: Session):
 
 
 async def create_user(user: CreateUser, db: Session):
+    print(f"Начало создания пользователя: {user.username}")
+
     # Проверяем существование пользователя с таким же username и firstname
     result = await db.execute(
         select(Users).where(
@@ -36,19 +56,39 @@ async def create_user(user: CreateUser, db: Session):
     if existing_user:
         raise HTTPException(status_code=400, detail="Пользователь с таким username и firstname уже существует")
 
-    user_slug = slugify(user.username)
-
     # Создаем словарь с данными пользователя
-    user_data = user.dict() if hasattr(user, 'dict') else user.model_dump()
+    user_data = user.model_dump() if hasattr(user, 'dict') else user.model_dump()
+    print(f"Данные пользователя: {user_data}")
 
-    # Создаем нового пользователя
-    new_user = Users(**user_data, slug=user_slug)
+    # Создаем нового пользователя БЕЗ slug
+    new_user = Users(**user_data)
+    print(f"Пользователь создан, ID до commit: {new_user.id}")
 
+    # Добавляем в БД и коммитим для получения ID
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    return new_user
 
+    print(f"ID после commit: {new_user.id}")
+
+    # Проверяем функцию slugify
+    base_slug = slugify(user.username)
+    print(f"Base slug: {base_slug}")
+
+    # Создаем уникальный slug с ID
+    user_slug = f"{base_slug}-{new_user.id}"
+    print(f"Финальный slug: {user_slug}")
+
+    # Обновляем пользователя с новым slug
+    new_user.slug = user_slug
+    print(f"Slug установлен в объект: {new_user.slug}")
+
+    await db.commit()
+    await db.refresh(new_user)
+
+    print(f"Slug после финального commit: {new_user.slug}")
+
+    return new_user
 
 async def update_user(user_id: int, user: UpdateUser, db: Session):
     # Получаем существующего пользователя
@@ -59,7 +99,7 @@ async def update_user(user_id: int, user: UpdateUser, db: Session):
         raise HTTPException(status_code=404, detail="User not found")
 
     # Обновляем атрибуты пользователя
-    user_data = user.dict(exclude_unset=True) if hasattr(user, 'dict') else user.model_dump(exclude_unset=True)
+    user_data = user.model_dump(exclude_unset=True)
     for key, value in user_data.items():
         setattr(existing_user, key, value)
 

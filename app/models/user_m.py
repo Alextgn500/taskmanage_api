@@ -2,8 +2,6 @@ from app.backend.base import Base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
-
-
 class Users(Base):
     __tablename__ = 'users'
     __table_args__ = {"extend_existing": True}
@@ -14,6 +12,7 @@ class Users(Base):
     lastname = Column(String, nullable=False)
     age = Column(Integer, nullable=False)
     slug = Column(String, unique=True, index=True)
+    password = Column(String, nullable=False)  # новое поле для хранения пароля (обычно хэш)
 
     tasks = relationship('Tasks', back_populates='user')
 
